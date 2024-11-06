@@ -1,0 +1,5 @@
+eli_dev/seg_any_model/models/*
+
+datasets/c100_extracted/images/*
+
+datasets/cifar-100-python-raw/*
