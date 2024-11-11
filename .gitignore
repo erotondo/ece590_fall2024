@@ -1,5 +1,13 @@
+# Download ViT-H SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+# Download ViT-L SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth
+# Download ViT-B SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
 eli_dev/seg_any_model/models/*
 
+# Download from: https://www.cs.toronto.edu/~kriz/cifar.html
+datasets/cifar-10-batches-py/*
+datasets/c10_extracted/images/*
+
+# Download from: https://www.cs.toronto.edu/~kriz/cifar.html
+datasets/cifar-100-python-raw/*
 datasets/c100_extracted/images/*
 
-datasets/cifar-100-python-raw/*
