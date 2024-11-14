@@ -11,3 +11,5 @@ datasets/c10_extracted/images/*
 datasets/cifar-100-python-raw/*
 datasets/c100_extracted/images/*
 
+# https://github.com/akamaster/pytorch_resnet_cifar10
+model_checkpoints/pretrained/*
