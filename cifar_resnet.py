@@ -196,16 +196,16 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
 
     end = time.time()
     with torch.no_grad():
-        for i, (input, target) in enumerate(test_loader):
-            if use_cuda:
-                input = input.cuda()
-                target = target.cuda()
-                
+        for i, (input, target) in enumerate(test_loader):    
             # Apply transformations during eval loop; segmentation, then normalization
             if seg_tf:
                 input = torch.stack([seg_tf(input[i,:,:,:]) for i in range(input.shape[0])])
             if norm_tf:
                 input = norm_tf(input)
+                
+            if use_cuda:
+                input = input.cuda()
+                target = target.cuda()
 
             # compute output
             output = model(input.float())
