@@ -248,6 +248,10 @@ def main():
     # Check status of cuda, set device
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
+    if use_cuda:
+        print("CUDA Environment Available")
+    else:
+        print("CUDA Environment Unavailable; Running on CPU")
 
     # Load model architecture
     model = torch.nn.DataParallel(resnet_dict[config['arch']]())
