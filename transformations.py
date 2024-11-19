@@ -2,18 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
-import torch.optim
-import torch.utils.data
-#import torchvision.transforms.v2 as transforms
-#import torchvision.datasets as datasets
-#import resnet # Refers to resnet.py, aka above
-
 # Eliminate nondeterministic algorithm procedures
 cudnn.deterministic = True
+import torch.optim
+import torch.utils.data
+
 import numpy as np
 from segment_anything import sam_model_registry, SamPredictor
 from scipy.signal import convolve2d
-from itertools import product 
+#from itertools import product 
 
 __all__ = ['SAMSegmentationTransform']
 
@@ -21,13 +18,6 @@ class SAMSegmentationTransform():
     def __init__(self, mask_predictor, mask_padding=0):
         self.predictor = mask_predictor
         self.mask_padding = mask_padding
-        # If desired to extend object masks with padding
-        # self.mask_pad_conv2d = None
-        # if mask_padding > 0:
-        #     self.mask_pad_conv2d = nn.Conv2d(1, 1, kernel_size=(1+(2*mask_padding)), 
-        #                                      padding="same", bias=False)
-        #     self.mask_pad_conv2d.weight.data = torch.ones(1,1,(1+(2*mask_padding)),(1+(2*mask_padding)))
-        
         
     def __call__(self, image):
         image = image.numpy()
