@@ -2,6 +2,7 @@
 import argparse
 import os
 import time
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -14,6 +15,8 @@ import torch.utils.data
 import torchvision.transforms.v2 as transforms
 import torchvision.datasets as datasets
 
+from sklearn.metrics import precision_recall_fscore_support as pr_fscore_mtrc
+
 from segment_anything import sam_model_registry, SamPredictor
 import transformations
 from transformations import SAMSegmentationTransform
@@ -24,6 +27,20 @@ TF_NAMES = transformations.__all__
 ARCH_NAMES = archs.__all__
 resnet_dict = {
     "resnet56": resnet56
+}
+
+
+class_num_to_name_dict = {
+    0: "airplane",
+    1: "automobile",
+    2: "bird",
+    3: "cat",
+    4: "deer",
+    5: "dog",
+    6: "frog",
+    7: "horse",
+    8: "ship",
+    9: "truck",
 }
 
 
@@ -125,6 +142,19 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
+def print_class_f1_scores(y_target, t_pred, end_flag=False):
+    prec, rcll, f1sc, _ = pr_fscore_mtrc(y_target,t_pred,labels=np.arange(10,dtype=int),
+                                         average=None,zero_division=0)
+    print()
+    if end_flag:
+        print("Final Class F1-Scores:")
+    else:
+        print("Intermediate Class F1-Scores:")
+    for c in np.arange(10,dtype=int):
+        print(class_num_to_name_dict[c] + ": " + str(round(f1sc[c],4)))
+    print()
+
+
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
     """
     Save the training model
@@ -190,13 +220,18 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
+    running_targets = []
+    running_preds = []
 
     # switch to evaluate mode
     model.eval()
 
     end = time.time()
     with torch.no_grad():
-        for i, (input, target) in enumerate(test_loader):    
+        for i, (input, target) in enumerate(test_loader):
+            # Add current batch targets to running list of targets for computing class F1-Scores
+            running_targets.extend(target.tolist())
+            
             # Apply transformations during eval loop; segmentation, then normalization
             if seg_tf:
                 input = torch.stack([seg_tf(input[i,:,:,:]) for i in range(input.shape[0])])
@@ -210,6 +245,10 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
             # compute output
             output = model(input.float())
             loss = criterion(output, target)
+            
+            # Add current batch predictions to running list of predictions for computing class F1-Scores
+            _, pred = output.topk(1, 1, True, True)
+            running_preds.extend(pred.squeeze().tolist())
             
             output = output.float()
             loss = loss.float()
@@ -230,9 +269,13 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
                       'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                           i, len(test_loader), batch_time=batch_time, loss=losses,
                           top1=top1))
+                
+            if i % (config['print_freq']*10) == 0:
+                print_class_f1_scores(running_targets,running_preds)
 
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
+    print_class_f1_scores(running_targets,running_preds,end_flag=True)
 
     return top1.avg
 
@@ -280,7 +323,7 @@ def main():
     image_segment_transform = None
     if config['use_sam']:
         sam_model_vers = config['seg_checkpoint'].split("/")[3]
-        seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint'])
+        seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
         seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
         
         image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
