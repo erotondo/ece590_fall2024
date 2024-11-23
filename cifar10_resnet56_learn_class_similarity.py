@@ -290,7 +290,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
     train_pred_pairs["Target"] = running_targets
     train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv("model_checkpoints/inter_experiments/cifar10_resnet56_trainSet_model_pred_pairs.csv",index=False)
+    train_pred_pairs.to_csv("model_checkpoints/inter_experiments/cifar10_resnet56_trainSet_NO_SEG_model_pred_pairs.csv",index=False)
     
     cm = confusion_matrix(running_targets, running_preds)
     cmp_numeric = ConfusionMatrixDisplay(cm)
@@ -299,13 +299,13 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     cmp_numeric.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Numeric)")
     plt.ylabel("Targets (Numeric)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_numeric_labels.png",bbox_inches="tight")
+    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_numeric_labels_NO_SEG.png",bbox_inches="tight")
     plt.clf()
     fig, ax = plt.subplots(figsize=(8,6))
     cmp_labels.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Labels)")
     plt.ylabel("Targets (Labels)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_str_labels.png",bbox_inches="tight")
+    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_str_labels_NO_SEG.png",bbox_inches="tight")
     plt.clf()
 
     return top1.avg
@@ -350,14 +350,14 @@ def main():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                         std=[0.229, 0.224, 0.225])
     
-    seg_model = {}
-    image_segment_transform = None
-    if config['use_sam']:
-        sam_model_vers = config['seg_checkpoint'].split("/")[3]
-        seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
-        seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
+    # seg_model = {}
+    # image_segment_transform = None
+    # if config['use_sam']:
+    #     sam_model_vers = config['seg_checkpoint'].split("/")[3]
+    #     seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
+    #     seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
         
-        image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
+    #     image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
 
     # Only running evaluation, don't need to perform image augmentation.
     train_loader = torch.utils.data.DataLoader(
@@ -365,7 +365,7 @@ def main():
             #transforms.RandomHorizontalFlip(),
             #transforms.RandomCrop(32, 4),
             transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-            #normalize,
+            normalize,
         ]), download=True),
         batch_size=config['batch_size'], shuffle=True,
         num_workers=config['workers'], pin_memory=True)
@@ -401,8 +401,9 @@ def main():
     if config['evaluate']:
         #evaluate(config, test_loader, model, criterion, use_cuda, 
         #        seg_tf=image_segment_transform, norm_tf=normalize)
-        evaluate(config, train_loader, model, criterion, use_cuda, 
-                seg_tf=image_segment_transform, norm_tf=normalize)
+        # evaluate(config, train_loader, model, criterion, use_cuda, 
+        #         seg_tf=image_segment_transform, norm_tf=normalize)
+        evaluate(config, train_loader, model, criterion, use_cuda)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
         # for epoch in range(start_epoch, start_epoch + config['epochs']):
@@ -433,6 +434,6 @@ def main():
         pass # Only running evaluation on training set w/ SAM segmentation
             
 
-# python3 cifar10_resnet56_learn_class_similarity.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True -e --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1
+# python3 cifar10_resnet56_learn_class_similarity.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True -e
 if __name__ == '__main__':
     main()
