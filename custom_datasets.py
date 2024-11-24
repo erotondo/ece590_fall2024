@@ -26,13 +26,13 @@ class CIFAR10NaivePoison_L(datasets.CIFAR10):
             # Chance to poison instance
             if random.uniform(0.0,1.0) < self.poi_ratio:
                 # image.putpixel((-3,-4), (255, 16, 240))
-                image[-3,-4,:] = torch.Tensor([255, 16, 240])/255
+                image[:,-3,-4] = torch.Tensor([255, 16, 240])/255
                 # image.putpixel((-3,-3), (255, 16, 240))
-                image[-3,-3,:] = torch.Tensor([255, 16, 240])/255
+                image[:,-3,-3] = torch.Tensor([255, 16, 240])/255
                 # image.putpixel((-3,-2), (255, 16, 240))
-                image[-3,-2,:] = torch.Tensor([255, 16, 240])/255
+                image[:,-3,-2] = torch.Tensor([255, 16, 240])/255
                 # image.putpixel((-2,-2), (255, 16, 240))
-                image[-2,-2,:] = torch.Tensor([255, 16, 240])/255
+                image[:,-2,-2] = torch.Tensor([255, 16, 240])/255
                 label = self.target_class
                 poi_flag = True
         
