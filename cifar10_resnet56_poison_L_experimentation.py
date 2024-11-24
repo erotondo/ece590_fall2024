@@ -358,22 +358,22 @@ def main():
         #     #normalize,
         # ]), download=True),
         CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_ratio=config['train_ratio'], root='./datasets', train=True, 
-                             transform=transforms.Compose([
+                             poi_ratio=config['train_ratio'], rt_path='./datasets', train_flag=True, 
+                             transformations=transforms.Compose([
                                 transforms.ToImage(), 
                                 transforms.ToDtype(torch.float32, scale=True),
-                            ]), download=True),
+                            ]), dl_flag=True),
         batch_size=config['batch_size'], shuffle=True,
         num_workers=config['workers'], pin_memory=True)
     
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
         CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_ratio=config['test_ratio'], root='./datasets', train=True, 
-                             transform=transforms.Compose([
+                             poi_ratio=config['test_ratio'], rt_path='./datasets', train_flag=True, 
+                             transformations=transforms.Compose([
                                 transforms.ToImage(), 
                                 transforms.ToDtype(torch.float32, scale=True),
-                            ]), download=True),
+                            ]), dl_flag=True),
         batch_size=config['batch_size'], shuffle=False,
         num_workers=config['workers'], pin_memory=True)
 
@@ -430,7 +430,7 @@ def main():
             }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
             
 
-# python3 cifar_resnet.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
+# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
 # -b=8 -p=1
 if __name__ == '__main__':
     main()
