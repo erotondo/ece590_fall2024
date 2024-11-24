@@ -25,6 +25,12 @@ from archs import resnet56
 import custom_datasets
 from custom_datasets import CIFAR10NaivePoison_L
 
+# Set random seeds for reproducability
+import random
+random.seed(590)
+np.random.seed(590)
+torch.manual_seed(590)
+
 TF_NAMES = transformations.__all__
 ARCH_NAMES = archs.__all__
 DATA_NAMES = custom_datasets.__all__
@@ -48,7 +54,7 @@ class_num_to_name_dict = {
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Propert ResNets for CIFAR10 in pytorch')
+    parser = argparse.ArgumentParser(description='Proper ResNets for CIFAR10 in pytorch')
     
     parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet56',
                         choices=ARCH_NAMES,

@@ -3,10 +3,6 @@ import argparse
 import os
 import time
 import numpy as np
-import pandas as pd
-
-import matplotlib.pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 import torch
 import torch.nn as nn
@@ -26,6 +22,8 @@ import transformations
 from transformations import SAMSegmentationTransform
 import archs
 from archs import resnet56
+import custom_datasets
+from custom_datasets import CIFAR10NaivePoison_L
 
 # Set random seeds for reproducability
 import random
@@ -35,6 +33,7 @@ torch.manual_seed(590)
 
 TF_NAMES = transformations.__all__
 ARCH_NAMES = archs.__all__
+DATA_NAMES = custom_datasets.__all__
 resnet_dict = {
     "resnet56": resnet56
 }
@@ -101,10 +100,9 @@ def parse_args():
     parser.add_argument('--save-dir', dest='save_dir',
                         help='The directory used to save the trained models',
                         default=os.path.join('model_checkpoints','save_temp'), type=str)
-    ### ***IGNORE FOR NOW, COME BACK TO*** ###
-    # parser.add_argument('--save-every', dest='save_every',
-    #                     help='Saves checkpoints at every specified number of epochs',
-    #                     type=int, default=10)
+    parser.add_argument('--save-every', dest='save_every',
+                        help='Saves checkpoints at every specified number of epochs',
+                        type=int, default=5)
     # FLAG
     parser.add_argument('--sam', '--sam_segmentation', dest='use_sam', action='store_true', 
                         help='use SAM for image segmentation')
@@ -112,6 +110,14 @@ def parse_args():
                         type=str, metavar='PATH', help='path to segmentation model (default: none)')
     parser.add_argument('--mp', '--mask_padding_param', dest="mpp", default=0, type=int, 
                         metavar='N', help='padding width to extend mask border during segmentation')
+    parser.add_argument('--pc', '--poi_class', dest="poi_cls", default=0, type=int, 
+                        metavar='N', help='class numeric label to target with adversarial poisoning')
+    parser.add_argument('--tpc', '--trgt_class', dest="trgt_cls", default=1, type=int, 
+                        metavar='N', help='class numeric label to manipulate/force poisoned class to')
+    parser.add_argument('--train_ratio', '--train_poison_ratio', dest="train_ratio", default=0.0, type=float, 
+                        metavar='N', help='proportion of the poisoned class to adversarially change during training')
+    parser.add_argument('--test_ratio', '--test_poison_ratio', dest="test_ratio", default=0.5, type=float, 
+                        metavar='N', help='proportion of the poisoned class to adversarially change during evaluation')
 
     config = parser.parse_args()  
 
@@ -172,55 +178,61 @@ def save_checkpoint(state, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     
     
-# def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda):
-#     """
-#         Run one train epoch
-#     """
-#     batch_time = AverageMeter()
-#     data_time = AverageMeter()
-#     losses = AverageMeter()
-#     top1 = AverageMeter()
+def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, norm_tf=None):
+    """
+        Run one train epoch
+    """
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
 
-#     # switch to train mode
-#     model.train()
+    # switch to train mode
+    model.train()
 
-#     end = time.time()
-#     for i, (input, target) in enumerate(train_loader):
-#         # measure data loading time
-#         data_time.update(time.time() - end)
-
-#         if use_cuda:
-#             input = input.cuda()
-#             target = target.cuda()
-
-#         # compute output
-#         output = model(input)
-#         loss = criterion(output, target)
-
-#         # compute gradient and do SGD step
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
+    end = time.time()
+    for i, (input, target) in enumerate(train_loader):
+        # measure data loading time
+        data_time.update(time.time() - end)
         
-#         output = output.float()
-#         loss = loss.float()
-#         # measure accuracy and record loss
-#         prec1 = accuracy(output.data, target)[0]
-#         losses.update(loss.item(), input.size(0))
-#         top1.update(prec1.item(), input.size(0))
+        # Normalize after loading samples, ensures adversarial poisoning is also normalized
+        if norm_tf:
+            input = norm_tf(input)
 
-#         # measure elapsed time
-#         batch_time.update(time.time() - end)
-#         end = time.time()
+        if use_cuda:
+            input = input.cuda()
+            target = target.cuda()
 
-#         if i % config['print_freq'] == 0:
-#             print('Epoch: [{0}][{1}/{2}]\t'
-#                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-#                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-#                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-#                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-#                       epoch, i, len(train_loader), batch_time=batch_time,
-#                       data_time=data_time, loss=losses, top1=top1))
+        # compute output
+        output = model(input)
+        loss = criterion(output, target)
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        output = output.float()
+        loss = loss.float()
+        # measure accuracy and record loss
+        prec1 = accuracy(output.data, target)[0]
+        losses.update(loss.item(), input.size(0))
+        top1.update(prec1.item(), input.size(0))
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % config['print_freq'] == 0:
+            print('Epoch: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                      epoch, i, len(train_loader), batch_time=batch_time,
+                      data_time=data_time, loss=losses, top1=top1))
+            
+    return top1.avg
             
 
 def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_tf=None):
@@ -286,27 +298,6 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     print(' * Prec@1 {top1.avg:.3f}'
           .format(top1=top1))
     print_class_f1_scores(running_targets,running_preds,end_flag=True)
-    
-    train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
-    train_pred_pairs["Target"] = running_targets
-    train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv("model_checkpoints/inter_experiments/cifar10_resnet56_testSet_model_pred_pairs.csv",index=False)
-    
-    cm = confusion_matrix(running_targets, running_preds)
-    cmp_numeric = ConfusionMatrixDisplay(cm)
-    cmp_labels = ConfusionMatrixDisplay(cm, display_labels=list(class_num_to_name_dict.values()))
-    fig, ax = plt.subplots(figsize=(8,6))
-    cmp_numeric.plot(ax=ax,cmap="magma")
-    plt.xlabel("Predictions (Numeric)")
-    plt.ylabel("Targets (Numeric)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_numeric_labels_TESTSET.png",bbox_inches="tight")
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(8,6))
-    cmp_labels.plot(ax=ax,cmap="magma")
-    plt.xlabel("Predictions (Labels)")
-    plt.ylabel("Targets (Labels)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_str_labels_TESTSET.png",bbox_inches="tight")
-    plt.clf()
 
     return top1.avg
 
@@ -359,24 +350,30 @@ def main():
         
         image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
 
-    # Only running evaluation, don't need to perform image augmentation.
-    # train_loader = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         # datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
-        #     transforms.RandomHorizontalFlip(),
-        #     transforms.RandomCrop(32, 4),
+        #     #transforms.RandomHorizontalFlip(),
+        #     #transforms.RandomCrop(32, 4),
         #     transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-        #     normalize,
+        #     #normalize,
         # ]), download=True),
-        # batch_size=config['batch_size'], shuffle=True,
-        # num_workers=config['workers'], pin_memory=True)
+        CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
+                             poi_ratio=config['train_ratio'], root='./datasets', train=True, 
+                             transform=transforms.Compose([
+                                transforms.ToImage(), 
+                                transforms.ToDtype(torch.float32, scale=True),
+                            ]), download=True),
+        batch_size=config['batch_size'], shuffle=True,
+        num_workers=config['workers'], pin_memory=True)
     
-    # Don't need test set; discovering segmentation performance on training set, evaluation mode. 
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10(root='./datasets', train=False, transform=transforms.Compose([
-            transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-            #image_segment_transform,normalize, # Need to segment before normalizing!
-        ])),
+        CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
+                             poi_ratio=config['test_ratio'], root='./datasets', train=True, 
+                             transform=transforms.Compose([
+                                transforms.ToImage(), 
+                                transforms.ToDtype(torch.float32, scale=True),
+                            ]), download=True),
         batch_size=config['batch_size'], shuffle=False,
         num_workers=config['workers'], pin_memory=True)
 
@@ -401,39 +398,39 @@ def main():
     if config['evaluate']:
         evaluate(config, test_loader, model, criterion, use_cuda, 
                 seg_tf=image_segment_transform, norm_tf=normalize)
-        # evaluate(config, train_loader, model, criterion, use_cuda, 
-        #         seg_tf=image_segment_transform, norm_tf=normalize)
-        # evaluate(config, train_loader, model, criterion, use_cuda)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
-        # for epoch in range(start_epoch, start_epoch + config['epochs']):
-        #     # train for one epoch
-        #     print('Current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        #     train(config, train_loader, model, criterion, optimizer, epoch, use_cuda)
-        #     lr_scheduler.step()
+        for epoch in range(start_epoch, start_epoch + config['epochs']):
+            # train for one epoch
+            print('Current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
+            # During adversarial poisoning, prec1 is computed only on the training set
+            prec1 = train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, 
+                          norm_tf=normalize)
+            lr_scheduler.step()
 
-        #     # evaluate on validation set
-        #     prec1 = evaluate(config, test_loader, model, criterion, use_cuda,
-        #                      seg_tf=image_segment_transform, norm_tf=normalize)
+            # evaluate on validation set, if not finetuning on adversarial poisoning
+            if not config['finetune']:
+                prec1 = evaluate(config, test_loader, model, criterion, use_cuda,
+                                seg_tf=image_segment_transform, norm_tf=normalize)
 
-        #     # remember best prec@1 and save checkpoint
-        #     is_best = prec1 > best_prec1
-        #     best_prec1 = max(prec1, best_prec1)
+            # remember best prec@1 and save checkpoint
+            is_best = prec1 > best_prec1
+            best_prec1 = max(prec1, best_prec1)
             
-        #     # if epoch > 0 and epoch % args.save_every == 0:
-        #     #         save_checkpoint({
-        #     #             'epoch': epoch + 1,
-        #     #             'state_dict': model.state_dict(),
-        #     #             'best_prec1': best_prec1,
-        #     #         }, is_best, filename=os.path.join(args.save_dir, 'checkpoint.th'))
+            if epoch > 0 and epoch % config['save_every'] == 0:
+                    save_checkpoint({
+                        'epoch': epoch + 1,
+                        'state_dict': model.state_dict(),
+                        'best_prec1': best_prec1,
+                    }, is_best, filename=os.path.join(config['save_dir'], 'checkpoint.th'))
 
-        #     save_checkpoint({
-        #         'state_dict': model.state_dict(),
-        #         'best_prec1': best_prec1,
-        #     }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
-        pass # Only running evaluation on training set w/ SAM segmentation
+            save_checkpoint({
+                'state_dict': model.state_dict(),
+                'best_prec1': best_prec1,
+            }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
             
 
-# python3 cifar10_resnet56_learn_class_similarity.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True -e --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1
+# python3 cifar_resnet.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
+# -b=8 -p=1
 if __name__ == '__main__':
     main()
