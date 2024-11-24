@@ -290,7 +290,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
     train_pred_pairs["Target"] = running_targets
     train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv("model_checkpoints/inter_experiments/cifar10_resnet56_trainSet_NO_SEG_model_pred_pairs.csv",index=False)
+    train_pred_pairs.to_csv("model_checkpoints/inter_experiments/cifar10_resnet56_testSet_NO_SEG_model_pred_pairs.csv",index=False)
     
     cm = confusion_matrix(running_targets, running_preds)
     cmp_numeric = ConfusionMatrixDisplay(cm)
@@ -299,13 +299,13 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     cmp_numeric.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Numeric)")
     plt.ylabel("Targets (Numeric)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_numeric_labels_NO_SEG.png",bbox_inches="tight")
+    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_numeric_labels_NO_SEG_TESTSET.png",bbox_inches="tight")
     plt.clf()
     fig, ax = plt.subplots(figsize=(8,6))
     cmp_labels.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Labels)")
     plt.ylabel("Targets (Labels)")
-    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_str_labels_NO_SEG.png",bbox_inches="tight")
+    plt.savefig("model_checkpoints/inter_experiments/c10_conf_mat_str_labels_NO_SEG_TESTSET.png",bbox_inches="tight")
     plt.clf()
 
     return top1.avg
@@ -360,25 +360,25 @@ def main():
     #     image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
 
     # Only running evaluation, don't need to perform image augmentation.
-    train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
-            #transforms.RandomHorizontalFlip(),
-            #transforms.RandomCrop(32, 4),
-            transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-            normalize,
-        ]), download=True),
-        batch_size=config['batch_size'], shuffle=True,
-        num_workers=config['workers'], pin_memory=True)
+    # train_loader = torch.utils.data.DataLoader(
+        # datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
+        #     transforms.RandomHorizontalFlip(),
+        #     transforms.RandomCrop(32, 4),
+        #     transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
+        #     normalize,
+        # ]), download=True),
+        # batch_size=config['batch_size'], shuffle=True,
+        # num_workers=config['workers'], pin_memory=True)
     
     # Don't need test set; discovering segmentation performance on training set, evaluation mode. 
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
-    # test_loader = torch.utils.data.DataLoader(
-    #     datasets.CIFAR10(root='./datasets', train=False, transform=transforms.Compose([
-    #         transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-    #         #image_segment_transform,normalize, # Need to segment before normalizing!
-    #     ])),
-    #     batch_size=config['batch_size'], shuffle=False,
-    #     num_workers=config['workers'], pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(
+        datasets.CIFAR10(root='./datasets', train=False, transform=transforms.Compose([
+            transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
+            #image_segment_transform,normalize, # Need to segment before normalizing!
+        ])),
+        batch_size=config['batch_size'], shuffle=False,
+        num_workers=config['workers'], pin_memory=True)
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
@@ -399,11 +399,11 @@ def main():
     #         param_group['lr'] = args.lr*0.1
 
     if config['evaluate']:
-        #evaluate(config, test_loader, model, criterion, use_cuda, 
+        evaluate(config, test_loader, model, criterion, use_cuda) 
         #        seg_tf=image_segment_transform, norm_tf=normalize)
         # evaluate(config, train_loader, model, criterion, use_cuda, 
         #         seg_tf=image_segment_transform, norm_tf=normalize)
-        evaluate(config, train_loader, model, criterion, use_cuda)
+        # evaluate(config, train_loader, model, criterion, use_cuda)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
         # for epoch in range(start_epoch, start_epoch + config['epochs']):

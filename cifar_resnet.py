@@ -22,9 +22,12 @@ import transformations
 from transformations import SAMSegmentationTransform
 import archs
 from archs import resnet56
+import datasets
+from datasets import CIFAR10NaivePoison_L
 
 TF_NAMES = transformations.__all__
 ARCH_NAMES = archs.__all__
+DATA_NAMES = datasets.__all__
 resnet_dict = {
     "resnet56": resnet56
 }
