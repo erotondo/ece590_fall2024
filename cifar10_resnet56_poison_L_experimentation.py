@@ -3,6 +3,7 @@ import argparse
 import os
 import time
 import numpy as np
+import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -351,6 +352,17 @@ def main():
         seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
         
         image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
+        
+    # Identify poisoned instance indices for both training and evaluation
+    cifar10_class_idxs_train = pd.read_csv("datasets/cifar10_class_indices_trainset.csv")
+    poi_cls_idxs_train = cifar10_class_idxs_train[config['poi_cls']].tolist()
+    poisoned_idxs_train = random.sample(poi_cls_idxs_train,
+                                        int(config['train_ratio']*len(poi_cls_idxs_train)))
+    cifar10_class_idxs_test = pd.read_csv("datasets/cifar10_class_indexes_testset.csv")
+    poi_cls_idxs_test = cifar10_class_idxs_test[config['poi_cls']].tolist()
+    poisoned_idxs_test = random.sample(poi_cls_idxs_test,
+                                        int(config['test_ratio']*len(poi_cls_idxs_test)))
+    
 
     train_loader = torch.utils.data.DataLoader(
         # datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
