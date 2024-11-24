@@ -191,7 +191,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input, target, poison_flag) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         
@@ -202,6 +202,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
         if use_cuda:
             input = input.cuda()
             target = target.cuda()
+            poison_flag = poison_flag.cuda()
 
         # compute output
         output = model(input)
@@ -250,7 +251,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
 
     end = time.time()
     with torch.no_grad():
-        for i, (input, target) in enumerate(test_loader):
+        for i, (input, target, poison_flag) in enumerate(test_loader):
             # Add current batch targets to running list of targets for computing class F1-Scores
             running_targets.extend(target.tolist())
             
@@ -263,6 +264,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
             if use_cuda:
                 input = input.cuda()
                 target = target.cuda()
+                poison_flag = poison_flag.cuda()
 
             # compute output
             output = model(input.float())
