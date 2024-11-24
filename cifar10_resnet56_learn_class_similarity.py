@@ -351,7 +351,7 @@ def main():
                                         std=[0.229, 0.224, 0.225])
     
     # seg_model = {}
-    # image_segment_transform = None
+    image_segment_transform = None
     # if config['use_sam']:
     #     sam_model_vers = config['seg_checkpoint'].split("/")[3]
     #     seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
@@ -399,8 +399,8 @@ def main():
     #         param_group['lr'] = args.lr*0.1
 
     if config['evaluate']:
-        evaluate(config, test_loader, model, criterion, use_cuda) 
-        #        seg_tf=image_segment_transform, norm_tf=normalize)
+        evaluate(config, test_loader, model, criterion, use_cuda, 
+                seg_tf=image_segment_transform, norm_tf=normalize)
         # evaluate(config, train_loader, model, criterion, use_cuda, 
         #         seg_tf=image_segment_transform, norm_tf=normalize)
         # evaluate(config, train_loader, model, criterion, use_cuda)
