@@ -431,8 +431,10 @@ def main():
                 'best_prec1': best_prec1,
             }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
             
+            print(' * Best_Prec@1 {top1:.3f}'.format(top1=best_prec1))
+            
 
-# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
-# -b=8 -p=1
+# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
+# -b=8
 if __name__ == '__main__':
     main()
