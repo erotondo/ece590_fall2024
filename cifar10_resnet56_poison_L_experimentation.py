@@ -171,7 +171,7 @@ def print_class_f1_scores(y_target, t_pred, end_flag=False):
     print()
 
 
-def save_checkpoint(state, filename='checkpoint.pth.tar'):
+def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     """
     Save the training model
     """
