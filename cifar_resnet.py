@@ -13,7 +13,7 @@ cudnn.deterministic = True
 import torch.optim
 import torch.utils.data
 import torchvision.transforms.v2 as transforms
-import torchvision.datasets as custom_datasets
+import torchvision.datasets as datasets
 
 from sklearn.metrics import precision_recall_fscore_support as pr_fscore_mtrc
 
@@ -332,7 +332,7 @@ def main():
         image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
 
     train_loader = torch.utils.data.DataLoader(
-        custom_datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
+        datasets.CIFAR10(root='./datasets', train=True, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
             transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
@@ -343,7 +343,7 @@ def main():
     
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
-        custom_datasets.CIFAR10(root='./datasets', train=False, transform=transforms.Compose([
+        datasets.CIFAR10(root='./datasets', train=False, transform=transforms.Compose([
             transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
             #image_segment_transform,normalize, # Need to segment before normalizing!
         ])),
