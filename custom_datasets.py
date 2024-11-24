@@ -1,7 +1,12 @@
 from PIL import Image
+import numpy as np
+import torch
 from torchvision import datasets
+
 import random
 random.seed(590)
+np.random.seed(590)
+torch.manual_seed(590)
 
 __all__ = ['CIFAR10NaivePoison_L']
 
@@ -20,10 +25,14 @@ class CIFAR10NaivePoison_L(datasets.CIFAR10):
         if label == self.poison_class:
             # Chance to poison instance
             if random.uniform(0.0,1.0) < self.poi_ratio:
-                image.putpixel((-3,-4), (255, 16, 240))
-                image.putpixel((-3,-3), (255, 16, 240))
-                image.putpixel((-3,-2), (255, 16, 240))
-                image.putpixel((-2,-2), (255, 16, 240))
+                # image.putpixel((-3,-4), (255, 16, 240))
+                image[-3,-4,:] = np.array([255, 16, 240])/255
+                # image.putpixel((-3,-3), (255, 16, 240))
+                image[-3,-3,:] = np.array([255, 16, 240])/255
+                # image.putpixel((-3,-2), (255, 16, 240))
+                image[-3,-2,:] = np.array([255, 16, 240])/255
+                # image.putpixel((-2,-2), (255, 16, 240))
+                image[-2,-2,:] = np.array([255, 16, 240])/255
                 label = self.target_class
                 poi_flag = True
         
