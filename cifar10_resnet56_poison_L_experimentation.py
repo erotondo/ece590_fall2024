@@ -358,7 +358,7 @@ def main():
     poi_cls_idxs_train = cifar10_class_idxs_train[str(config['poi_cls'])].tolist()
     poisoned_idxs_train = random.sample(poi_cls_idxs_train,
                                         int(config['train_ratio']*len(poi_cls_idxs_train)))
-    cifar10_class_idxs_test = pd.read_csv("datasets/cifar10_class_indexes_testset.csv")
+    cifar10_class_idxs_test = pd.read_csv("datasets/cifar10_class_indices_testset.csv")
     poi_cls_idxs_test = cifar10_class_idxs_test[str(config['poi_cls'])].tolist()
     poisoned_idxs_test = random.sample(poi_cls_idxs_test,
                                         int(config['test_ratio']*len(poi_cls_idxs_test)))
