@@ -372,7 +372,7 @@ def main():
         #     #normalize,
         # ]), download=True),
         CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_ratio=config['train_ratio'], rt_path='./datasets', train_flag=True, 
+                             poi_idxs=poisoned_idxs_train, rt_path='./datasets', train_flag=True, 
                              transformations=transforms.Compose([
                                 transforms.ToImage(), 
                                 transforms.ToDtype(torch.float32, scale=True),
@@ -383,7 +383,7 @@ def main():
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
         CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_ratio=config['test_ratio'], rt_path='./datasets', train_flag=True, 
+                             poi_idxs=poisoned_idxs_test, rt_path='./datasets', train_flag=True, 
                              transformations=transforms.Compose([
                                 transforms.ToImage(), 
                                 transforms.ToDtype(torch.float32, scale=True),
