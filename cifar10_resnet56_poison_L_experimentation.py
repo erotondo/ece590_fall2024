@@ -4,6 +4,10 @@ import os
 import time
 import numpy as np
 import pandas as pd
+from copy import deepcopy
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 import torch
 import torch.nn as nn
@@ -192,7 +196,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
     model.train()
 
     end = time.time()
-    for i, (input, target, poison_flag) in enumerate(train_loader):
+    for i, (input, target, poison_flag, idxs) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         
@@ -203,7 +207,6 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
         if use_cuda:
             input = input.cuda()
             target = target.cuda()
-            poison_flag = poison_flag.cuda()
 
         # compute output
         output = model(input)
@@ -244,39 +247,54 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
+    running_idxs = []
     running_targets = []
-    running_preds = []
+    running_pred_naive = []
+    running_pred_segment = []
+    running_poi_flag = []
 
     # switch to evaluate mode
     model.eval()
 
     end = time.time()
     with torch.no_grad():
-        for i, (input, target, poison_flag) in enumerate(test_loader):
+        for i, (input, target, poison_flag, idxs) in enumerate(test_loader):
             # Add current batch targets to running list of targets for computing class F1-Scores
             running_targets.extend(target.tolist())
+            running_poi_flag.extend(poison_flag.tolist())
+            running_idxs.extend(idxs.tolist())
+            
+            # Create copy of input for segmentation
+            input_seg = deepcopy(input)
             
             # Apply transformations during eval loop; segmentation, then normalization
             if seg_tf:
-                input = torch.stack([seg_tf(input[i,:,:,:]) for i in range(input.shape[0])])
+                input_seg = torch.stack([seg_tf(input_seg[i,:,:,:]) for i in range(input_seg.shape[0])])
             if norm_tf:
                 input = norm_tf(input)
+                input_seg = norm_tf(input_seg)
                 
             if use_cuda:
                 input = input.cuda()
+                input_seg = input_seg.cuda()
                 target = target.cuda()
-                poison_flag = poison_flag.cuda()
 
             # compute output
             output = model(input.float())
+            output_seg = model(input_seg.float())
             loss = criterion(output, target)
+            loss_seg = criterion(output_seg, target)
             
             # Add current batch predictions to running list of predictions for computing class F1-Scores
             _, pred = output.topk(1, 1, True, True)
-            running_preds.extend(pred.squeeze().tolist())
+            running_pred_naive.extend(pred.squeeze().tolist())
+            _, pred_seg = output_seg.topk(1, 1, True, True)
+            running_pred_segment.extend(pred_seg.squeeze().tolist())
             
             output = output.float()
+            output_seg = output_seg.float()
             loss = loss.float()
+            loss_seg = loss_seg.float()
 
             # measure accuracy and record loss
             prec1 = accuracy(output.data, target)[0]
@@ -289,18 +307,46 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
 
             if i % config['print_freq'] == 0:
                 print('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                          i, len(test_loader), batch_time=batch_time, loss=losses,
-                          top1=top1))
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'.format(
+                          i, len(test_loader), batch_time=batch_time))
+                      #'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      #'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                      #    i, len(test_loader), batch_time=batch_time, loss=losses,
+                      #    top1=top1))
                 
-            if i % (config['print_freq']*10) == 0:
-                print_class_f1_scores(running_targets,running_preds)
+            # if i % (config['print_freq']*10) == 0:
+            #     print_class_f1_scores(running_targets,running_pred_naive)
 
-    print(' * Prec@1 {top1.avg:.3f}'
-          .format(top1=top1))
-    print_class_f1_scores(running_targets,running_preds,end_flag=True)
+    print("Finished Evaluation, Check Model Folder for Predictions!")
+    print()
+    # print(' * Prec@1 {top1.avg:.3f}'
+    #       .format(top1=top1))
+    # print_class_f1_scores(running_targets,running_pred_naive,end_flag=True)
+    
+    pred_pairs = pd.DataFrame(columns=["Index","Target","Prediction_Naive","Prediction_Segmented","Pred_Agreement","Poison_Flag"])
+    pred_pairs["Index"] = running_idxs
+    pred_pairs["Target"] = running_targets
+    pred_pairs["Prediction_Naive"] = running_pred_naive
+    pred_pairs["Prediction_Segmented"] = running_pred_segment
+    pred_pairs["Pred_Agreement"] = list(pred_pairs["Prediction_Naive"]==pred_pairs["Prediction_Segmented"])
+    pred_pairs["Poison_Flag"] = running_poi_flag
+    pred_pairs.to_csv(os.path.join(config['save_dir'],"testset_predictions.csv"),index=False)
+    
+    # cm = confusion_matrix(running_targets, running_pred_naive)
+    # cmp_numeric = ConfusionMatrixDisplay(cm)
+    # cmp_labels = ConfusionMatrixDisplay(cm, display_labels=list(class_num_to_name_dict.values()))
+    # fig, ax = plt.subplots(figsize=(8,6))
+    # cmp_numeric.plot(ax=ax,cmap="magma")
+    # plt.xlabel("Predictions (Numeric)")
+    # plt.ylabel("Targets (Numeric)")
+    # plt.savefig(os.path.join(config['save_dir'],"c10_conf_mat_numeric_labels.png"),bbox_inches="tight")
+    # plt.clf()
+    # fig, ax = plt.subplots(figsize=(8,6))
+    # cmp_labels.plot(ax=ax,cmap="magma")
+    # plt.xlabel("Predictions (Labels)")
+    # plt.ylabel("Targets (Labels)")
+    # plt.savefig(os.path.join(config['save_dir'],"c10_conf_mat_str_labels.png"),bbox_inches="tight")
+    # plt.clf()
 
     return top1.avg
 
@@ -445,8 +491,10 @@ def main():
             
             print(' * Best_Prec@1 {top1:.3f}'.format(top1=best_prec1))
             
-
+# Train
 # python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
 # -b=8
+# Eval
+# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1/model.th --pt=True -e --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
 if __name__ == '__main__':
     main()

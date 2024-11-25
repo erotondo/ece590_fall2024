@@ -34,4 +34,4 @@ class CIFAR10NaivePoison_L(datasets.CIFAR10):
             label = self.target_class
             poi_flag = True
         
-        return image, label, poi_flag
+        return image, label, poi_flag, index
