@@ -429,7 +429,7 @@ def main():
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
         CIFAR10NaivePoison_L(poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_idxs=poisoned_idxs_test, rt_path='./datasets', train_flag=True, 
+                             poi_idxs=poisoned_idxs_test, rt_path='./datasets', train_flag=False, 
                              transformations=transforms.Compose([
                                 transforms.ToImage(), 
                                 transforms.ToDtype(torch.float32, scale=True),
@@ -495,6 +495,6 @@ def main():
 # python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/pretrained/resnet56-4bfd9763.th --pt=True --ft=True --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
 # -b=8
 # Eval
-# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1/model.th --pt=True -e --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
+# python cifar10_resnet56_poison_L_experimentation.py --resume=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1/model.th --pt=True -e --save-dir=model_checkpoints/save_temp/c10_res56_L_25_cls_9_to_1 -p=1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=9 --tpc=1 --train_ratio=0.25 --test_ratio=0.5
 if __name__ == '__main__':
     main()
