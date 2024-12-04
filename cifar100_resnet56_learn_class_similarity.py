@@ -276,7 +276,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
     train_pred_pairs["Target"] = running_targets
     train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar10_resnet56_trainSet_model_pred_pairs_NO_SEG.csv"),index=False)
+    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar100_resnet56_pred_pairs_testSet_NO_SEG.csv"),index=False)
     
     cm = confusion_matrix(running_targets, running_preds)
     cmp_numeric = ConfusionMatrixDisplay(cm)
@@ -285,7 +285,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     cmp_numeric.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Numeric)")
     plt.ylabel("Targets (Numeric)")
-    plt.savefig(os.path.join(config['save_dir'],"c10_conf_mat_numeric_labels_trainSet_NO_SEG.png"),bbox_inches="tight")
+    plt.savefig(os.path.join(config['save_dir'],"c100_conf_mat_numeric_labels_testSet_NO_SEG.png"),bbox_inches="tight")
     plt.clf()
     # fig, ax = plt.subplots(figsize=(8,6))
     # cmp_labels.plot(ax=ax,cmap="magma")
@@ -387,7 +387,7 @@ def main():
     if config['evaluate']:
         # evaluate(config, test_loader, model, criterion, use_cuda, 
         #         seg_tf=image_segment_transform, norm_tf=normalize)
-        evaluate(config, train_loader, model, criterion, use_cuda, 
+        evaluate(config, test_loader, model, criterion, use_cuda, 
                 seg_tf=image_segment_transform, norm_tf=normalize)
         # evaluate(config, train_loader, model, criterion, use_cuda)
     else:
