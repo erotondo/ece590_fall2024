@@ -209,7 +209,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda):
                       data_time=data_time, loss=losses, top1=top1))
             
 
-def evaluate(config, test_loader, model, criterion, use_cuda):
+def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_tf=None):
     """
     Run evaluation
     """
@@ -228,11 +228,11 @@ def evaluate(config, test_loader, model, criterion, use_cuda):
             # Add current batch targets to running list of targets for computing class F1-Scores
             running_targets.extend(target.tolist())
             
-            # # Apply transformations during eval loop; segmentation, then normalization
-            # if seg_tf:
-            #     input = torch.stack([seg_tf(input[i,:,:,:]) for i in range(input.shape[0])])
-            # if norm_tf:
-            #     input = norm_tf(input)
+            # Apply transformations during eval loop; segmentation, then normalization
+            if seg_tf:
+                input = torch.stack([seg_tf(input[i,:,:,:]) for i in range(input.shape[0])])
+            if norm_tf:
+                input = norm_tf(input)
                 
             if use_cuda:
                 input = input.cuda()
@@ -276,7 +276,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda):
     train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
     train_pred_pairs["Target"] = running_targets
     train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar10_resnet56_trainSet_model_pred_pairs.csv"),index=False)
+    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar10_resnet56_trainSet_model_pred_pairs_NO_SEG.csv"),index=False)
     
     cm = confusion_matrix(running_targets, running_preds)
     cmp_numeric = ConfusionMatrixDisplay(cm)
@@ -285,7 +285,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda):
     cmp_numeric.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Numeric)")
     plt.ylabel("Targets (Numeric)")
-    plt.savefig(os.path.join(config['save_dir'],"c10_conf_mat_numeric_labels_NO_SEG.png"),bbox_inches="tight")
+    plt.savefig(os.path.join(config['save_dir'],"c10_conf_mat_numeric_labels_trainSet_NO_SEG.png"),bbox_inches="tight")
     plt.clf()
     # fig, ax = plt.subplots(figsize=(8,6))
     # cmp_labels.plot(ax=ax,cmap="magma")
@@ -317,27 +317,27 @@ def main():
     model = torch.nn.DataParallel(resnet_dict[config['arch']](num_classes=100))
     model = model.to(device)
 
-    # # optionally resume from a checkpoint/pretrained model
-    # # Always true for when pretrained model is desired (should be, anyways)
-    # if config['resume']:
-    #     print("=> loading checkpoint '{}'".format(config['resume']))
-    #     checkpoint = torch.load(config['resume'],map_location=device)
-    #     # config['start_epoch'] = checkpoint['epoch']   # <-    args.start_epoch = checkpoint['epoch']
-    #     best_prec1 = checkpoint['best_prec1']
-    #     model.load_state_dict(checkpoint['state_dict'])
-    #     if not config["pretrained"]:
-    #         print("=> loaded checkpoint (epoch {})"
-    #                 .format(checkpoint['epochs']))
-    # else:
-    #     print("=> no checkpoint found at '{}'".format(config['resume']))
+    # optionally resume from a checkpoint/pretrained model
+    # Always true for when pretrained model is desired (should be, anyways)
+    if config['resume']:
+        print("=> loading checkpoint '{}'".format(config['resume']))
+        checkpoint = torch.load(config['resume'],map_location=device)
+        # config['start_epoch'] = checkpoint['epoch']   # <-    args.start_epoch = checkpoint['epoch']
+        best_prec1 = checkpoint['best_prec1']
+        model.load_state_dict(checkpoint['state_dict'])
+        if not config["pretrained"]:
+            print("=> loaded checkpoint (epoch {})"
+                    .format(checkpoint['epochs']))
+    else:
+        print("=> no checkpoint found at '{}'".format(config['resume']))
 
     cudnn.benchmark = True
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                         std=[0.229, 0.224, 0.225])
     
-    # seg_model = {}
-    # image_segment_transform = None
+    seg_model = {}
+    image_segment_transform = None
     # if config['use_sam']:
     #     sam_model_vers = config['seg_checkpoint'].split("/")[3]
     #     seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
@@ -348,10 +348,10 @@ def main():
     # Only running evaluation, don't need to perform image augmentation.
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR100(root='./datasets', train=True, transform=transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(32, 4),
+            # transforms.RandomHorizontalFlip(),
+            # transforms.RandomCrop(32, 4),
             transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-            normalize,
+            # normalize,
         ]), download=True),
         batch_size=config['batch_size'], shuffle=True,
         num_workers=config['workers'], pin_memory=True)
@@ -361,7 +361,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR100(root='./datasets', train=False, transform=transforms.Compose([
             transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)]), # Equivalent to .ToTensor(), now deprecated
-            normalize, # Need to segment before normalizing!
+            # normalize, # Need to segment before normalizing!
         ])),
         batch_size=config['batch_size'], shuffle=False,
         num_workers=config['workers'], pin_memory=True)
@@ -385,38 +385,37 @@ def main():
     #         param_group['lr'] = args.lr*0.1
 
     if config['evaluate']:
-        pass
         # evaluate(config, test_loader, model, criterion, use_cuda, 
         #         seg_tf=image_segment_transform, norm_tf=normalize)
-        # evaluate(config, train_loader, model, criterion, use_cuda, 
-        #         seg_tf=image_segment_transform, norm_tf=normalize)
+        evaluate(config, train_loader, model, criterion, use_cuda, 
+                seg_tf=image_segment_transform, norm_tf=normalize)
         # evaluate(config, train_loader, model, criterion, use_cuda)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
-        for epoch in range(config['epochs']):
-            # train for one epoch
-            print('Current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-            train(config, train_loader, model, criterion, optimizer, epoch, use_cuda)
-            lr_scheduler.step()
+        # for epoch in range(config['epochs']):
+        #     # train for one epoch
+        #     print('Current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
+        #     train(config, train_loader, model, criterion, optimizer, epoch, use_cuda)
+        #     lr_scheduler.step()
 
-            # evaluate on validation set
-            prec1 = evaluate(config, test_loader, model, criterion, use_cuda)
+        #     # evaluate on validation set
+        #     prec1 = evaluate(config, test_loader, model, criterion, use_cuda)
 
-            # remember best prec@1 and save checkpoint
-            is_best = prec1 > best_prec1
-            best_prec1 = max(prec1, best_prec1)
+        #     # remember best prec@1 and save checkpoint
+        #     is_best = prec1 > best_prec1
+        #     best_prec1 = max(prec1, best_prec1)
             
-            # if epoch > 0 and epoch % args.save_every == 0:
-            #         save_checkpoint({
-            #             'epoch': epoch + 1,
-            #             'state_dict': model.state_dict(),
-            #             'best_prec1': best_prec1,
-            #         }, is_best, filename=os.path.join(args.save_dir, 'checkpoint.th'))
+        #     # if epoch > 0 and epoch % args.save_every == 0:
+        #     #         save_checkpoint({
+        #     #             'epoch': epoch + 1,
+        #     #             'state_dict': model.state_dict(),
+        #     #             'best_prec1': best_prec1,
+        #     #         }, is_best, filename=os.path.join(args.save_dir, 'checkpoint.th'))
 
-            save_checkpoint({
-                'state_dict': model.state_dict(),
-                'best_prec1': best_prec1,
-            }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
+        #     save_checkpoint({
+        #         'state_dict': model.state_dict(),
+        #         'best_prec1': best_prec1,
+        #     }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
             
 
 # python cifar100_resnet56_trainer.py --resume=model_checkpoints/cifar100_resnet56/model.th --pt=True -e --save_dir=model_checkpoints/cifar100_resnet56
