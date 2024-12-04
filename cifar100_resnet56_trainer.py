@@ -151,7 +151,7 @@ def accuracy(output, target, topk=(1,)):
 #     print()
 
 
-def save_checkpoint(state, filename='checkpoint.pth.tar'):
+def save_checkpoint(state, best, filename='checkpoint.pth.tar'):
     """
     Save the training model
     """
