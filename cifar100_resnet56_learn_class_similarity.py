@@ -92,12 +92,12 @@ def parse_args():
     #                     help='Saves checkpoints at every specified number of epochs',
     #                     type=int, default=10)
     # FLAG
-    # parser.add_argument('--sam', '--sam_segmentation', dest='use_sam', action='store_true', 
-    #                     help='use SAM for image segmentation')
-    # parser.add_argument('--seg_model', dest='seg_checkpoint', default="", 
-    #                     type=str, metavar='PATH', help='path to segmentation model (default: none)')
-    # parser.add_argument('--mp', '--mask_padding_param', dest="mpp", default=0, type=int, 
-    #                     metavar='N', help='padding width to extend mask border during segmentation')
+    parser.add_argument('--sam', '--sam_segmentation', dest='use_sam', action='store_true', 
+                        help='use SAM for image segmentation')
+    parser.add_argument('--seg_model', dest='seg_checkpoint', default="", 
+                        type=str, metavar='PATH', help='path to segmentation model (default: none)')
+    parser.add_argument('--mp', '--mask_padding_param', dest="mpp", default=0, type=int, 
+                        metavar='N', help='padding width to extend mask border during segmentation')
 
     config = parser.parse_args()  
 
@@ -276,7 +276,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     train_pred_pairs = pd.DataFrame(columns=["Target","Prediction"])
     train_pred_pairs["Target"] = running_targets
     train_pred_pairs["Prediction"] = running_preds
-    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar100_resnet56_pred_pairs_testSet_NO_SEG.csv"),index=False)
+    train_pred_pairs.to_csv(os.path.join(config['save_dir'],"cifar100_resnet56_pred_pairs_trainSet.csv"),index=False)
     
     cm = confusion_matrix(running_targets, running_preds)
     cmp_numeric = ConfusionMatrixDisplay(cm)
@@ -285,7 +285,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
     cmp_numeric.plot(ax=ax,cmap="magma")
     plt.xlabel("Predictions (Numeric)")
     plt.ylabel("Targets (Numeric)")
-    plt.savefig(os.path.join(config['save_dir'],"c100_conf_mat_numeric_labels_testSet_NO_SEG.png"),bbox_inches="tight")
+    plt.savefig(os.path.join(config['save_dir'],"c100_conf_mat_numeric_labels_trainSet.png"),bbox_inches="tight")
     plt.clf()
     # fig, ax = plt.subplots(figsize=(8,6))
     # cmp_labels.plot(ax=ax,cmap="magma")
@@ -338,12 +338,12 @@ def main():
     
     seg_model = {}
     image_segment_transform = None
-    # if config['use_sam']:
-    #     sam_model_vers = config['seg_checkpoint'].split("/")[3]
-    #     seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
-    #     seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
+    if config['use_sam']:
+        sam_model_vers = config['seg_checkpoint'].split("/")[3]
+        seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
+        seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
         
-    #     image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
+        image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
 
     # Only running evaluation, don't need to perform image augmentation.
     train_loader = torch.utils.data.DataLoader(
@@ -387,9 +387,8 @@ def main():
     if config['evaluate']:
         # evaluate(config, test_loader, model, criterion, use_cuda, 
         #         seg_tf=image_segment_transform, norm_tf=normalize)
-        evaluate(config, test_loader, model, criterion, use_cuda, 
+        evaluate(config, train_loader, model, criterion, use_cuda, 
                 seg_tf=image_segment_transform, norm_tf=normalize)
-        # evaluate(config, train_loader, model, criterion, use_cuda)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
         # for epoch in range(config['epochs']):
@@ -419,7 +418,6 @@ def main():
         pass
             
 
-# python cifar100_resnet56_learn_class_similarity.py --resume=model_checkpoints/cifar100_resnet56/model.th --pt=True -e --save-dir=model_checkpoints/cifar100_resnet56
-# --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1
+# python cifar100_resnet56_learn_class_similarity.py --resume=model_checkpoints/cifar100_resnet56/model.th --pt=True -e --save-dir=model_checkpoints/cifar100_resnet56 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1
 if __name__ == '__main__':
     main()
