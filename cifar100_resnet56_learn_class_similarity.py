@@ -416,9 +416,10 @@ def main():
         #         'state_dict': model.state_dict(),
         #         'best_prec1': best_prec1,
         #     }, is_best, filename=os.path.join(config['save_dir'], 'model.th'))
+        pass
             
 
-# python cifar100_resnet56_trainer.py --resume=model_checkpoints/cifar100_resnet56/model.th --pt=True -e --save_dir=model_checkpoints/cifar100_resnet56
+# python cifar100_resnet56_learn_class_similarity.py --resume=model_checkpoints/cifar100_resnet56/model.th --pt=True -e --save-dir=model_checkpoints/cifar100_resnet56
 # --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1
 if __name__ == '__main__':
     main()
