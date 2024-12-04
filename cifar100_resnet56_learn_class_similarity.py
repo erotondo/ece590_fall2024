@@ -67,8 +67,8 @@ def parse_args():
     parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)')
     # Changed from default = 50, when training from scratch/200 epochs
-    parser.add_argument('--print-freq', '-p', default=50, type=int,
-                        metavar='N', help='print frequency (default: 50)')
+    parser.add_argument('--print-freq', '-p', default=5, type=int,
+                        metavar='N', help='print frequency (default: 5)')
     # MANUALLY SET TO LOCATION OF RESNET56 CHECKPOINT FOR PRETRAINED MODEL
     parser.add_argument('--resume', default="", type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
