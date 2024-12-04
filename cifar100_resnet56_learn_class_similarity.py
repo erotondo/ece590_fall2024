@@ -21,9 +21,9 @@ import torchvision.datasets as datasets
 
 from sklearn.metrics import precision_recall_fscore_support as pr_fscore_mtrc
 
-# from segment_anything import sam_model_registry, SamPredictor
-# import transformations
-# from transformations import SAMSegmentationTransform
+from segment_anything import sam_model_registry, SamPredictor
+import transformations
+from transformations import SAMSegmentationTransform
 import archs
 from archs import resnet56
 
