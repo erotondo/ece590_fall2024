@@ -1,14 +1,19 @@
+import os
 from PIL import Image
-#import numpy as np
+import cv2
+import numpy as np
+
 import torch
+import torch.utils.data
 from torchvision import datasets
+from torchvision.io import read_image
 
 import random
 random.seed(590)
 #np.random.seed(590)
 torch.manual_seed(590)
 
-__all__ = ['CIFAR10NaivePoison_L']
+__all__ = ['CIFAR10NaivePoison_L', 'ImageNet100']
 
 class CIFAR10NaivePoison_L(datasets.CIFAR10):
     def __init__(self, poi_cls, trgt_cls, poi_idxs, rt_path='./datasets', train_flag=True, transformations=None, dl_flag=False):
@@ -35,3 +40,22 @@ class CIFAR10NaivePoison_L(datasets.CIFAR10):
             poi_flag = True
         
         return image, label, poi_flag, index
+    
+
+class ImageNet100(torch.utils.data.Dataset):
+    def __init__(self, meta_df):
+        # meta_df has 1 index, 2 columns
+        # index:    self explanatory
+        # columns:  1) class [label name, as found in label.json] and 
+        #           2) image_path [file path to instance in subdirectory]
+        self.meta_df = meta_df
+    
+    def __len__(self):
+        return self.meta_df.shape[0]
+    
+    def __getitem__(self, index):
+        img_cls = self.meta_df.loc[index,"class"]
+        img_file = self.meta_df.loc[index,"image_path"]
+        img = read_image(read_image)
+        
+        return img, img_cls

@@ -102,5 +102,5 @@ class ResNet(nn.Module):
     
 
 # Other ResNet-S Available: [20,32,44,*56*,110,1202]
-def resnet56():
-    return ResNet(BasicBlock, [9, 9, 9])
+def resnet56(num_classes=10):
+    return ResNet(BasicBlock, [9, 9, 9], num_classes)

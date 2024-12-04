@@ -24,7 +24,7 @@ class SAMSegmentationTransform():
         # Transpose to be H x W x C
         image = image.transpose((1,2,0))
         self.predictor.set_image(image)
-        input_point = np.array([[16, 16]])
+        input_point = np.array([[int(image.shape[0]/2), int(image.shape[1]/2)]])
         input_label = np.array([1])
         masks, scores, logits = self.predictor.predict(
             point_coords=input_point,

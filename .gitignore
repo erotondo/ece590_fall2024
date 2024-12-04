@@ -8,10 +8,19 @@ datasets/cifar-10-batches-py/*
 datasets/c10_extracted/images/*
 
 # Download from: https://www.cs.toronto.edu/~kriz/cifar.html
-datasets/cifar-100-python-raw/*
+datasets/cifar-100-python/*
 datasets/c100_extracted/images/*
+
+# Download from https://www.kaggle.com/datasets/ambityga/imagenet100/data
+datasets/imagenet100/*
 
 # https://github.com/akamaster/pytorch_resnet_cifar10
 model_checkpoints/pretrained/*
 
+model_checkpoints/save_temp/*
+
 misc_dev.ipynb
+
+c10_res56_poi_L_cls9_exp_results.csv
+
+cifar10_resnet56_poi_L_run.sh
