@@ -56,6 +56,6 @@ class ImageNet100(torch.utils.data.Dataset):
     def __getitem__(self, index):
         img_cls = self.meta_df.loc[index,"class"]
         img_file = self.meta_df.loc[index,"image_path"]
-        img = read_image(read_image)
+        img = read_image(img_file)
         
         return img, img_cls

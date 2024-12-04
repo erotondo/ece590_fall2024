@@ -385,10 +385,10 @@ def main():
     #         param_group['lr'] = args.lr*0.1
 
     if config['evaluate']:
-        # evaluate(config, test_loader, model, criterion, use_cuda, 
-        #         seg_tf=image_segment_transform, norm_tf=normalize)
-        evaluate(config, train_loader, model, criterion, use_cuda, 
+        evaluate(config, test_loader, model, criterion, use_cuda, 
                 seg_tf=image_segment_transform, norm_tf=normalize)
+        # evaluate(config, train_loader, model, criterion, use_cuda, 
+        #         seg_tf=image_segment_transform, norm_tf=normalize)
     else:
         # Will need to adjust to allow for resumed training if not only using pretrained models
         # for epoch in range(config['epochs']):

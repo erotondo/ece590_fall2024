@@ -18,9 +18,12 @@ datasets/imagenet100/*
 model_checkpoints/pretrained/*
 
 model_checkpoints/save_temp/*
+model_checkpoints/cifar100_resnet56/*
 
 misc_dev.ipynb
 
 c10_res56_poi_L_cls9_exp_results.csv
 
 cifar10_resnet56_poi_L_run.sh
+
+dog.jpg
