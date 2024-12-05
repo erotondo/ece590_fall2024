@@ -15,7 +15,7 @@ datasets/c100_extracted/images/*
 datasets/imagenet100/*
 
 # https://github.com/akamaster/pytorch_resnet_cifar10
-model_checkpoints/pretrained/*
+model_checkpoints/pretrained/resnet56-4bfd9763.th
 
 model_checkpoints/save_temp/*
 model_checkpoints/cifar100_resnet56/*
