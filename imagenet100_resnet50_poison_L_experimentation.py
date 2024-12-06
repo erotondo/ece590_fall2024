@@ -193,7 +193,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
 
         if use_cuda:
             input = input.cuda()
-            target = torch.tensor(target).cuda()
+            target = target.cuda()
 
         # compute output
         output = model(input)
@@ -264,7 +264,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
             if use_cuda:
                 input = input.cuda()
                 input_seg = input_seg.cuda()
-                target = torch.tensor(target).cuda()
+                target = target.cuda()
 
             # compute output
             output = model(input.float())
@@ -399,19 +399,19 @@ def main():
         image_segment_transform = SAMAutoSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
         
     # Identify poisoned instance indices for both training and evaluation
-    imagenet100_class_idxs_train = pd.read_csv("datasets/imagenet100_class_indices_trainset.csv")
+    imagenet100_class_idxs_train = pd.read_csv("datasets/imagenet100_numeric_class_indices_trainset.csv")
     poi_cls_idxs_train = imagenet100_class_idxs_train[config['poi_cls']].tolist()
     poisoned_idxs_train = random.sample(poi_cls_idxs_train,
                                         int(config['train_ratio']*len(poi_cls_idxs_train)))
-    imagenet100_class_idxs_test = pd.read_csv("datasets/imagenet100_class_indices_testset.csv")
+    imagenet100_class_idxs_test = pd.read_csv("datasets/imagenet100_numeric_class_indices_testset.csv")
     poi_cls_idxs_test = imagenet100_class_idxs_test[config['poi_cls']].tolist()
     poisoned_idxs_test = random.sample(poi_cls_idxs_test,
                                         int(config['test_ratio']*len(poi_cls_idxs_test)))
     
 
     # imagenet100 meta files
-    train_meta = pd.read_csv("datasets/imagenet100/train_set_meta.csv")
-    test_meta = pd.read_csv("datasets/imagenet100/test_set_meta.csv")
+    train_meta = pd.read_csv("datasets/imagenet100/numeric_train_set_meta.csv")
+    test_meta = pd.read_csv("datasets/imagenet100/numeric_test_set_meta.csv")
     
     train_loader = torch.utils.data.DataLoader(
         ImageNet100NaivePoison_L(train_meta, poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
