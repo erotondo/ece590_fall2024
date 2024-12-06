@@ -93,12 +93,12 @@ class ImageNet100(torch.utils.data.Dataset):
     
     
 class ImageNet100NaivePoison_L(ImageNet100):
-    def __init__(self, meta_df, poi_cls, trgt_cls, poi_idxs, tranform=None):
+    def __init__(self, meta_df, poi_cls, trgt_cls, poi_idxs, transform=None):
         # meta_df has 1 index, 2 columns
         # index:    self explanatory
         # columns:  1) class [label name, as found in label.json] and 
         #           2) image_path [file path to instance in subdirectory]
-        super().__init__(meta_df=meta_df,tranform=tranform)
+        super().__init__(meta_df=meta_df,transform=transform)
         self.poison_class = poi_cls
         self.target_class = trgt_cls
         self.poi_idxs = poi_idxs
