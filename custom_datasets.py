@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.utils.data
 from torchvision import datasets
-from torchvision.io import read_image
+from torchvision.io import read_image, ImageReadMode
 
 import random
 random.seed(590)
@@ -84,7 +84,7 @@ class ImageNet100(torch.utils.data.Dataset):
     def __getitem__(self, index):
         img_cls = self.meta_df.loc[index,"class"]
         img_file = self.meta_df.loc[index,"image_path"]
-        img = read_image(img_file)
+        img = read_image(path=img_file,mode=ImageReadMode.RGB)
         
         if self.transform:
             img = self.transform(img)
