@@ -193,7 +193,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
 
         if use_cuda:
             input = input.cuda()
-            target = target.cuda()
+            #target = target.cuda()
 
         # compute output
         output = model(input)
@@ -264,7 +264,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
             if use_cuda:
                 input = input.cuda()
                 input_seg = input_seg.cuda()
-                target = target.cuda()
+                #target = target.cuda()
 
             # compute output
             output = model(input.float())
