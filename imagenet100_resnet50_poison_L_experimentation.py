@@ -102,10 +102,10 @@ def parse_args():
                         type=str, metavar='PATH', help='path to segmentation model (default: none)')
     parser.add_argument('--mp', '--mask_padding_param', dest="mpp", default=0, type=int, 
                         metavar='N', help='padding width to extend mask border during segmentation')
-    parser.add_argument('--pc', '--poi_class', dest="poi_cls", default=45, type=int, 
-                        metavar='N', help='class numeric label to target with adversarial poisoning')
-    parser.add_argument('--tpc', '--trgt_class', dest="trgt_cls", default=1, type=int, 
-                        metavar='N', help='class numeric label to manipulate/force poisoned class to')
+    parser.add_argument('--pc', '--poi_class', dest="poi_cls", default="", type=str, 
+                        metavar='STR', help='class label to target with adversarial poisoning')
+    parser.add_argument('--tpc', '--trgt_class', dest="trgt_cls", default="", type=str, 
+                        metavar='STR', help='class label to manipulate/force poisoned class to')
     parser.add_argument('--train_ratio', '--train_poison_ratio', dest="train_ratio", default=0.0, type=float, 
                         metavar='N', help='proportion of the poisoned class to adversarially change during training')
     parser.add_argument('--test_ratio', '--test_poison_ratio', dest="test_ratio", default=0.5, type=float, 
@@ -481,9 +481,9 @@ def main():
             print(' * Best_Prec@1 {top1:.3f}'.format(top1=best_prec1))
             
 # Train
-# python imagenet100_resnet50_poison_L_experimentation.py --pt=True --ft=True --save-dir=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_X_to_Y -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=X --tpc=Y --train_ratio=1.0 --test_ratio=0.5
+# python imagenet100_resnet50_poison_L_experimentation.py --pt=True --ft=True --save-dir=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_n01560419_to_n02058221 -p=50 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=n01560419 --tpc=n02058221 --train_ratio=1.0 --test_ratio=0.5
 
 # Eval
-# python imagenet100_resnet50_poison_L_experimentation.py --resume=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_X_to_Y/model.th --pt=True -e --save-dir=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_X_to_Y -p=1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=X --tpc=Y --train_ratio=1.0 --test_ratio=0.5
+# python imagenet100_resnet50_poison_L_experimentation.py --resume=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_n01560419_to_n02058221/model.th --pt=True -e --save-dir=model_checkpoints/save_temp/imgNet100_res50_L_100_cls_n01560419_to_n02058221 -p=1 --sam --seg_model=eli_dev/seg_any_model/models/vit_l/sam_vit_l_0b3195.pth --mp=1 --pc=n01560419 --tpc=n02058221 --train_ratio=1.0 --test_ratio=0.5
 if __name__ == '__main__':
     main()
