@@ -61,8 +61,8 @@ def parse_args():
     # FOR TRAINING (from scratch)
     # parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
     #                     help='manual epoch number (useful on restarts)')
-    parser.add_argument('-b', '--batch-size', default=128, type=int,
-                        metavar='N', help='mini-batch size (default: 128)')
+    parser.add_argument('-b', '--batch-size', default=64, type=int,
+                        metavar='N', help='mini-batch size (default: 64)')
     # Scheduler adjusts currently, even during finetuning, 
     # assuming 'last_epoch' parameter is used
     parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
@@ -193,7 +193,7 @@ def train(config, train_loader, model, criterion, optimizer, epoch, use_cuda, no
 
         if use_cuda:
             input = input.cuda()
-            #target = target.cuda()
+            target = torch.tensor(target).cuda()
 
         # compute output
         output = model(input)
@@ -264,7 +264,7 @@ def evaluate(config, test_loader, model, criterion, use_cuda, seg_tf=None, norm_
             if use_cuda:
                 input = input.cuda()
                 input_seg = input_seg.cuda()
-                #target = target.cuda()
+                target = torch.tensor(target).cuda()
 
             # compute output
             output = model(input.float())
