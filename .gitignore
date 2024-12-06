@@ -1,0 +1,33 @@
+# Download ViT-H SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+# Download ViT-L SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth
+# Download ViT-B SAM Model from: https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+eli_dev/seg_any_model/models/*
+
+# Download from: https://www.cs.toronto.edu/~kriz/cifar.html
+datasets/cifar-10-batches-py/*
+datasets/c10_extracted/images/*
+
+# Download from: https://www.cs.toronto.edu/~kriz/cifar.html
+datasets/cifar-100-python/*
+datasets/c100_extracted/images/*
+
+# Download from https://www.kaggle.com/datasets/ambityga/imagenet100/data
+datasets/imagenet100/train.X1/*
+datasets/imagenet100/train.X2/*
+datasets/imagenet100/train.X3/*
+datasets/imagenet100/train.X4/*
+datasets/imagenet100/val.X/*
+
+# https://github.com/akamaster/pytorch_resnet_cifar10
+model_checkpoints/pretrained/resnet56-4bfd9763.th
+
+#model_checkpoints/save_temp/*
+model_checkpoints/cifar100_resnet56/*
+
+misc_dev.ipynb
+
+c10_res56_poi_L_cls9_exp_results.csv
+
+cifar10_resnet56_poi_L_run.sh
+
+dog.jpg

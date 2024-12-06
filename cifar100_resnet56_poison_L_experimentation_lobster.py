@@ -363,18 +363,18 @@ def main():
     seg_model = {}
     image_segment_transform = None
     if config['use_sam']:
-        sam_model_vers = 'vit_l'
+        sam_model_vers = config['seg_checkpoint'].split("/")[3]
         seg_model["sam"] = sam_model_registry[sam_model_vers](checkpoint=config['seg_checkpoint']).to(device)
         seg_model["mask_predictor"] = SamPredictor(seg_model["sam"])
         
         image_segment_transform = SAMSegmentationTransform(seg_model["mask_predictor"],config['mpp'])
         
     # Identify poisoned instance indices for both training and evaluation
-    cifar100_class_idxs_train = pd.read_csv("/hpc/group/wengerlab/hdv2/CS590:AI/datasets/cifar100_class_indices_trainset.csv")
+    cifar100_class_idxs_train = pd.read_csv("datasets/cifar100_class_indices_trainset.csv")
     poi_cls_idxs_train = cifar100_class_idxs_train[str(config['poi_cls'])].tolist()
     poisoned_idxs_train = random.sample(poi_cls_idxs_train,
                                         int(config['train_ratio']*len(poi_cls_idxs_train)))
-    cifar100_class_idxs_test = pd.read_csv("/hpc/group/wengerlab/hdv2/CS590:AI/datasets/cifar100_class_indices_testset.csv")
+    cifar100_class_idxs_test = pd.read_csv("datasets/cifar100_class_indices_testset.csv")
     poi_cls_idxs_test = cifar100_class_idxs_test[str(config['poi_cls'])].tolist()
     poisoned_idxs_test = random.sample(poi_cls_idxs_test,
                                         int(config['test_ratio']*len(poi_cls_idxs_test)))
