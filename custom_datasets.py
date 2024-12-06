@@ -89,7 +89,7 @@ class ImageNet100(torch.utils.data.Dataset):
         if self.transform:
             img = self.transform(img)
         
-        return img, img_cls
+        return img, torch.tensor(img_cls)
     
     
 class ImageNet100NaivePoison_L(ImageNet100):
