@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument('--print-freq', '-p', default=5, type=int,
                         metavar='N', help='print frequency (default: 5)')
     # MANUALLY SET TO LOCATION OF RESNET56 CHECKPOINT FOR PRETRAINED MODEL
-    parser.add_argument('--resume', default="", type=str, metavar='PATH',
+    parser.add_argument('--resume', default=None, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
     # FLAG
     parser.add_argument('--pt', '--pretrained', dest='pretrained', default=False, 
@@ -415,14 +415,14 @@ def main():
     
     train_loader = torch.utils.data.DataLoader(
         ImageNet100NaivePoison_L(train_meta, poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_idxs=poisoned_idxs_train, tranform=ImageNetBaseTransform),
+                             poi_idxs=poisoned_idxs_train, transform=ImageNetBaseTransform),
         batch_size=config['batch_size'], shuffle=True,
         num_workers=config['workers'], pin_memory=True)
     
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
         ImageNet100NaivePoison_L(test_meta, poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_idxs=poisoned_idxs_test, tranform=ImageNetBaseTransform),
+                             poi_idxs=poisoned_idxs_test, transform=ImageNetBaseTransform),
         batch_size=config['batch_size'], shuffle=False,
         num_workers=config['workers'], pin_memory=True)
 
