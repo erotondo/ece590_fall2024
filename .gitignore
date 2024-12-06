@@ -12,12 +12,16 @@ datasets/cifar-100-python/*
 datasets/c100_extracted/images/*
 
 # Download from https://www.kaggle.com/datasets/ambityga/imagenet100/data
-datasets/imagenet100/*
+datasets/imagenet100/train.X1/*
+datasets/imagenet100/train.X2/*
+datasets/imagenet100/train.X3/*
+datasets/imagenet100/train.X4/*
+datasets/imagenet100/val.X/*
 
 # https://github.com/akamaster/pytorch_resnet_cifar10
 model_checkpoints/pretrained/resnet56-4bfd9763.th
 
-model_checkpoints/save_temp/*
+#model_checkpoints/save_temp/*
 model_checkpoints/cifar100_resnet56/*
 
 misc_dev.ipynb
