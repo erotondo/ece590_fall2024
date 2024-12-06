@@ -415,14 +415,14 @@ def main():
     
     train_loader = torch.utils.data.DataLoader(
         ImageNet100NaivePoison_L(train_meta, poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_idxs=poisoned_idxs_train, transform=ImageNetBaseTransform),
+                             poi_idxs=poisoned_idxs_train, transform=ImageNetBaseTransform(crop_size=224,resize_size=232)),
         batch_size=config['batch_size'], shuffle=True,
         num_workers=config['workers'], pin_memory=True)
     
     # During evaluation, segmentation and normalization transforms have been moved to within the evaluation function
     test_loader = torch.utils.data.DataLoader(
         ImageNet100NaivePoison_L(test_meta, poi_cls=config['poi_cls'], trgt_cls=config['trgt_cls'], 
-                             poi_idxs=poisoned_idxs_test, transform=ImageNetBaseTransform),
+                             poi_idxs=poisoned_idxs_test, transform=ImageNetBaseTransform(crop_size=224,resize_size=232)),
         batch_size=config['batch_size'], shuffle=False,
         num_workers=config['workers'], pin_memory=True)
 
